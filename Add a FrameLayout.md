@@ -1,0 +1,1 @@
+ ideal when you only have one child view. Arranges the views one on top of each other : great to display overlapping content.

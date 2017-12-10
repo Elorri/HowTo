@@ -1,0 +1,15 @@
+# Evaluer les actifs materiels
+
+# Evaluer les actifs materiels cad les "droits de propriete intellectuelle"
+
+il s'agit d'evaluer la valeur de : 
+
+	- marque de l'entreprise : combien de personnes on confiance en vous ?
+	- portefeuille de brevet
+	- strategie R et D : votre appli est elle intuitive ?
+	- accord de licence
+	- capital humain = savoir faire
+		- base de donnees
+		- manuels
+		- spec produits
+		- directives fabrication produits

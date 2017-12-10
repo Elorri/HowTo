@@ -1,0 +1,226 @@
+# Address to free hosting in france
+
+https://www.alwaysdata.com/fr/
+
+# Databases
+
+list all databases : http://127.0.0.1:5984/_all_dbs
+database baseball : http://127.0.0.1:5984/baseball
+database plankton : http://127.0.0.1:5984/plankton
+
+ A database is a bucket that holds “related data”
+
+# Tables equivalent : document
+{
+    "_id": "00a271787f89c0ef2e10e88a0c0001f4",
+    "_rev": "1-2628a75ac8c3abfffc8f6e30c9949fd6",
+    "item": "apple",
+    "prices": {
+        "Fresh Mart": 1.59,
+        "Price Max": 5.99,
+        "Apples Express": 0.79
+    }
+}
+
+each 'tables' will always have 
+- a uuid :_id you can put a better name if you like. 
+- a _rev id
+
+and then
+- attributes
+
+_id is used by the mapreduce function to run work in parallel in the B-tree
+the _id is unique per databases
+
+ You are free to choose any string to be the ID, but for best results we recommend a UUID (or GUID), i.e., a Universally (or Globally) Unique IDentifier. UUIDs are random numbers that have such a low collision probability that everybody can make thousands of UUIDs a minute for millions of years without ever creating a duplicate. 
+
+In fact
+
+	its a table with only one row
+
+Ids and perf
+
+	As a real world example for one user switching from 16 byte ids to 4 byte ids made a database go from 21GB to 4GB with 10 million documents (the raw JSON text when from 2.5GB to 2GB).
+	Inserting with sequential (and at least sorted) ids is faster than random ids. Consequently you should consider generating ids yourself, allocating them sequentially and using an encoding scheme that consumes fewer bytes. 
+		
+# Replication 
+
+CouchDB replication is a mechanism to synchronize databases. Much like rsync synchronizes two directories locally or over a network, replication synchronizes two databases locally or remotely.
+
+# Admin
+
+When you start out fresh, CouchDB allows any request to be made by anyone. Create a database? No problem, here you go. Delete some documents? Same deal. CouchDB calls this the Admin Party. Everybody has privileges to do anything. Neat.
+While it is incredibly easy to get started with CouchDB that way, it should be obvious that putting a default installation into the wild is adventurous. Any rogue client could come along and delete a database.
+A note of relief: by default, CouchDB will listen only on your loopback network interface (127.0.0.1 or localhost) and thus only you will be able to make requests to CouchDB, nobody else. But when you start to open up your CouchDB to the public (that is, by telling it to bind to your machine’s public IP address), you will want to think about restricting access so that the next bad guy doesn’t ruin your admin party.
+
+If at least one admin is defined then CouchDB will not allow us to create new databases unless we give the correct admin user credentials
+
+# Using curl in android (very good post)
+
+	https://stackoverflow.com/questions/5870611/curl-in-android
+	
+# What to do when phone and tablet update database at the same time ?
+
+	http://docs.couchdb.org/en/2.0.0/replication/conflicts.html
+	
+# Performance
+
+	With up to tens of thousands of documents you will generally find CouchDB to perform well no matter how you write your code. Once you start getting into the millions of documents you need to be a lot more careful.
+	
+# Function descriptions
+
+	http://docs.couchdb.org/en/2.0.0/couchapp/ddocs.html	
+	
+# Views
+
+The combination of a map and a reduce function is called a view in CouchDB terminology.
+Map functions are called once with each document as the argument.
+
+Does is means no joint but copy/paste of data ?
+	
+	Map functions may not depend on any information outside of the document. This independence is what allows CouchDB views to be generated incrementally and in parallel.
+	
+Can CouchDB handle thousands of separate databases?
+
+	Very cool anwer :https://stackoverflow.com/questions/9887481/can-couchdb-handle-thousands-of-separate-databases
+	
+CouchDB shuts off its indexing to prevent any further resource usage. For this reason, it’s important to check for the existence of any fields before you use them.
+View rows are sorted by their keys – in this example, first by item, then by price. This method of complex sorting is at the heart of creating useful indexes with CouchDB.
+
+	http://docs.couchdb.org/en/2.0.0/intro/tour.html
+	
+Views are useful for many purposes:
+
+	Filtering the documents in your database to find those relevant to a particular process.
+	Extracting data from your documents and presenting it in a specific order.
+	Building efficient indexes to find documents by any value or structure that resides in them.
+	Use these indexes to represent relationships among documents.
+	Finally, with views you can make all sorts of calculations on the data in your documents. For example, if documents represent your company’s financial transactions, a view can answer the question of what the spending was in the last week, month, or year. Like we do in SQL sum(*) but it allows more flexibility beacause it uses javascript and can do loops, if, then else etc...
+	
+Example : For a front page, we want a list of blog post titles sorted by date
+
+	{
+		"_id":"biking",
+		"_rev":"AE19EBC7654",
+
+		"title":"Biking",
+		"body":"My biggest hobby is mountainbiking. The other day...",
+		tags: ["cool", "freak", "plankton"],
+		"date":"2009/01/30 18:04:11"
+	}
+
+	{
+		"_id":"bought-a-cat",
+		"_rev":"4A3BBEE711",
+
+		"title":"Bought a Cat",
+		"body":"I went to the the pet store earlier and brought home a little kitty...",
+		tags: [],
+		"date":"2009/02/17 21:13:39"
+	}
+
+	{
+		"_id":"hello-world",
+		"_rev":"43FBA4E7AB",
+
+		"title":"Hello World",
+		"body":"Well hello and welcome to my new blog...",
+		"date":"2009/01/15 15:52:20"
+	}
+
+We define a view : 
+
+	function(doc) {
+		if(doc.date && doc.title) {
+			emit(doc.date, doc.title);//2 params key and value
+		}
+	}
+	
+When you query your view, CouchDB takes the source code and runs it for you on every document in the database. If you have a lot of documents, that takes quite a bit of time and you might wonder if it is not horribly inefficient to do this. Yes, it would be, but CouchDB is designed to avoid any extra costs: it only runs through all documents once, when you first query your view. If a document is changed, the map function is only run once, to recompute the keys and values for that single document.
+	
+The emit() function always takes two arguments: the first is key, and the second is value. The emit(key, value) function creates an entry in our view result. One more thing: the emit() function can be called multiple times in the map function to create multiple entries in the view results from a single document, but we are not doing that yet.
+For each doc where we defined this function, this function will be called and all the pairs got by the emit function will be sorted by key and kept in an array
+		
+The view result is stored in a B-tree, just like the structure that is responsible for holding your documents but separate from them. Here is the view result (simplified - without metadata).Note because views are stored in files separate from documents, we can store views on a separate database.
+
+You can access a view like this with the url : /database/_design/designdocname/_view/viewname.
+	{
+		"total_rows": 3,
+		"offset": 0,
+		"rows": [
+			{
+				"key": "2009/01/15 15:52:20",
+				"id": "hello-world",
+				"value": "Hello World"
+			},
+
+			{
+				"key": "2009/01/30 18:04:11",
+				"id": "biking",
+				"value": "Biking"
+			},
+
+			{
+				"key": "2009/02/17 21:13:39",
+				"id": "bought-a-cat",
+				"value": "Bought a Cat"
+			}
+
+		]
+	}
+To find a single document, we would use /blog/_design/docs/_view/by_date?key="2009/01/30 18:04:11"
+This gives you a list of all rows in the view. We have only three documents, so things are small, but with thousands of documents, this can get long. You can add view parameters to the URI to constrain the result set. Say we know the date of a blog post. To find a single document, we would use /blog/_design/docs/_view/by_date?key="2009/01/30 18:04:11" to get the “Biking” blog post. Remember that you can place whatever you like in the key parameter to the emit() function. Whatever you put in there, we can now use to look up exactly — and fast.	
+/blog/_design/docs/_view/by_date?startkey="2010/01/01 00:00:00"&endkey="2010/02/00 00:00:00"
+	
+What happens, though, when you change a document, add a new one, or delete one? Easy: CouchDB is smart enough to find the rows in the view result that were created by a specific document. It marks them invalid so that they no longer show up in view results.
+
+Other function example : This shows a few new things. You can have conditions on structure (if(doc.tags.length > 0)) instead of just values. This is also an example of how a map function calls emit() multiple times per document. And finally, you can pass null instead of a value to the value parameter. The same is true for the key parameter. We’ll see in a bit how that is useful. 
+
+function(doc) {
+    if(doc.tags.length > 0) {
+        for(var idx in doc.tags) {
+            emit(doc.tags[idx], null);
+        }
+    }
+}
+
+# Reduce
+
+Be careful when using descending order. It's most likely that you want to use an endkey with it instead of a start key. See doc : http://docs.couchdb.org/en/2.0.0/couchapp/views/intro.html
+
+Examples : 
+
+function(keys, values, rereduce) {
+    return sum(values)
+}
+
+# Joint
+
+Il n'y a  pas de jointure. Si un document possède l'id d'un autre doc, on peut faire une requête (map function) pour fetcher cet autre document.
+
+http://docs.couchdb.org/en/2.0.0/couchapp/views/joins.html
+
+Basically you design like with tables.
+
+	Exple :
+	- table Post contains posts
+	- table Comment contains comments and an id pointing to the related Post
+
+And then you generate what you need. What you need is what you would like to have in a simple http get request.
+
+# From SQL to CouchDb
+
+	http://docs.couchdb.org/en/2.0.0/couchapp/views/nosql.html
+	https://stackoverflow.com/questions/28339910/how-can-i-use-my-sql-knowledge-with-cloudant-couchdb
+	
+# Pagination
+
+
+
+
+
+
+
+
+
+
